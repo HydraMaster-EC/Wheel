@@ -11,9 +11,9 @@
   const DEFAULT_NAMES = ["Alex", "Jamie", "Sam", "Taylor", "Jordan", "Casey"];
 
   const COLORS = [
-    "#e74c3c", "#f39c12", "#f1c40f", "#2ecc71", "#1abc9c",
-    "#3498db", "#9b59b6", "#e84393", "#00b894", "#0984e3",
-    "#fd79a8", "#e17055", "#6c5ce7", "#00cec9", "#fab1a0",
+    "#6a3fd1", "#ff6b4a", "#2fb6a3", "#f2b705", "#e8558f",
+    "#4c8bf5", "#7bc86c", "#c65bd6", "#ff9a3c", "#39b6e0",
+    "#b28bff", "#d6455f",
   ];
 
   function loadState(groupId) {
@@ -174,13 +174,19 @@
         const textWrap = document.createElement("span");
         textWrap.className = "name-text";
 
+        const ticketNo = document.createElement("span");
+        ticketNo.className = "ticket-no";
+        ticketNo.textContent = String(i + 1).padStart(2, "0");
+
         const swatch = document.createElement("span");
         swatch.className = "swatch";
         swatch.style.background = COLORS[i % COLORS.length];
 
         const text = document.createElement("span");
+        text.className = "name-label";
         text.textContent = entry.name;
 
+        textWrap.appendChild(ticketNo);
         textWrap.appendChild(swatch);
         textWrap.appendChild(text);
 
@@ -203,6 +209,11 @@
       const center = size / 2;
       const radius = center - 6;
       const names = this.getActiveEntries().map((e) => e.name);
+      const rootStyle = getComputedStyle(document.body);
+      const emptyFill = rootStyle.getPropertyValue("--border").trim() || "#d0d3da";
+      const mutedFill = rootStyle.getPropertyValue("--muted").trim() || "#666";
+      const surfaceFill = rootStyle.getPropertyValue("--surface").trim() || "#fff";
+      const textFill = rootStyle.getPropertyValue("--text").trim() || "#333";
 
       ctx.clearRect(0, 0, size, size);
       ctx.save();
@@ -212,14 +223,14 @@
       if (names.length === 0) {
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
-        ctx.fillStyle = "#d0d3da";
+        ctx.fillStyle = emptyFill;
         ctx.fill();
         ctx.restore();
         ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "#666";
-        ctx.font = "bold 20px sans-serif";
+        ctx.fillStyle = mutedFill;
+        ctx.font = "600 18px Manrope, sans-serif";
         ctx.fillText("Add names to spin", center, center);
         ctx.restore();
         return;
@@ -246,7 +257,7 @@
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "#fff";
-        ctx.font = `600 ${names.length > 20 ? 12 : 16}px sans-serif`;
+        ctx.font = `700 ${names.length > 20 ? 12 : 16}px Manrope, sans-serif`;
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 3;
         const label = name.length > 22 ? name.slice(0, 20) + "…" : name;
@@ -257,10 +268,10 @@
       // hub
       ctx.beginPath();
       ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = surfaceFill;
       ctx.fill();
       ctx.lineWidth = 3;
-      ctx.strokeStyle = "#333";
+      ctx.strokeStyle = textFill;
       ctx.stroke();
 
       ctx.restore();
