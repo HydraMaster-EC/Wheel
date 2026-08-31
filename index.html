@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wheel of Names — Class Picker</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🎡 Wheel of Names</h1>
+    <div class="tabs" id="tabs"></div>
+  </header>
+
+  <main id="groups"></main>
+
+  <div id="winnerOverlay" class="winner-overlay hidden">
+    <div class="winner-card">
+      <div class="winner-label">Winner!</div>
+      <div class="winner-name" id="winnerName"></div>
+      <button id="closeWinner" class="btn btn-primary">Close</button>
+    </div>
+  </div>
+
+  <template id="groupTemplate">
+    <section class="group-panel">
+      <div class="panel-grid">
+        <div class="wheel-column">
+          <div class="wheel-wrap">
+            <div class="pointer">▼</div>
+            <canvas class="wheel-canvas" width="500" height="500"></canvas>
+          </div>
+          <div class="wheel-controls">
+            <button class="btn btn-primary spin-btn">Spin the Wheel</button>
+            <label class="remove-winner-label">
+              <input type="checkbox" class="remove-winner-checkbox" />
+              Remove winner after spin
+            </label>
+          </div>
+        </div>
+
+        <div class="names-column">
+          <div class="group-title-row">
+            <input type="text" class="group-title-input" maxlength="40" />
+          </div>
+
+          <div class="add-name-row">
+            <input type="text" class="name-input" placeholder="Add a name and press Enter" />
+            <button class="btn add-name-btn">Add</button>
+          </div>
+
+          <details class="bulk-add">
+            <summary>Bulk add / edit list (one name per line)</summary>
+            <textarea class="bulk-textarea" rows="6" placeholder="Alex&#10;Jamie&#10;Sam&#10;..."></textarea>
+            <button class="btn bulk-apply-btn">Apply List</button>
+          </details>
+
+          <ul class="name-list"></ul>
+
+          <div class="list-actions">
+            <span class="name-count">0 names</span>
+            <button class="btn btn-danger clear-btn">Clear All</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
