@@ -43,6 +43,10 @@
       this.state = loadState(groupId);
       this.rotation = 0; // current rotation in radians
       this.spinning = false;
+      // Indices (into this.state.names) removed by "remove winner after spin".
+      // Intentionally NOT persisted: reset to empty on every page load so the
+      // full saved roster is back, while manual add/remove edits stay saved.
+      this.sessionRemovedIndices = new Set();
 
       this.canvas = panelEl.querySelector(".wheel-canvas");
       this.ctx = this.canvas.getContext("2d");
@@ -95,6 +99,7 @@
           .map((l) => l.trim())
           .filter((l) => l.length > 0);
         this.state.names = lines;
+        this.sessionRemovedIndices = new Set();
         this.persist();
         this.renderNameList();
         this.drawWheel();
@@ -104,6 +109,7 @@
         if (this.state.names.length === 0) return;
         if (!confirm(`Clear all names from "${this.state.title}"?`)) return;
         this.state.names = [];
+        this.sessionRemovedIndices = new Set();
         this.persist();
         this.renderNameList();
         this.drawWheel();
@@ -112,6 +118,14 @@
 
     persist() {
       saveState(this.groupId, this.state);
+    }
+
+    // Names still in the saved roster that haven't been removed by a spin
+    // this session, paired with their index in the persisted state.names.
+    getActiveEntries() {
+      return this.state.names
+        .map((name, i) => ({ name, i }))
+        .filter((entry) => !this.sessionRemovedIndices.has(entry.i));
     }
 
     addNameFromInput() {
@@ -125,8 +139,15 @@
       this.nameInput.focus();
     }
 
+    // index here is the original index into this.state.names (permanent removal).
     removeNameAt(index) {
       this.state.names.splice(index, 1);
+      const shifted = new Set();
+      this.sessionRemovedIndices.forEach((i) => {
+        if (i === index) return;
+        shifted.add(i > index ? i - 1 : i);
+      });
+      this.sessionRemovedIndices = shifted;
       this.persist();
       this.renderNameList();
       this.drawWheel();
@@ -134,10 +155,10 @@
 
     renderNameList() {
       this.nameListEl.innerHTML = "";
-      const names = this.state.names;
-      this.nameCountEl.textContent = `${names.length} name${names.length === 1 ? "" : "s"}`;
+      const entries = this.getActiveEntries();
+      this.nameCountEl.textContent = `${entries.length} name${entries.length === 1 ? "" : "s"}`;
 
-      if (names.length === 0) {
+      if (entries.length === 0) {
         const hint = document.createElement("li");
         hint.className = "empty-hint";
         hint.textContent = "No names yet. Add some above!";
@@ -147,7 +168,7 @@
         return;
       }
 
-      names.forEach((name, i) => {
+      entries.forEach((entry, i) => {
         const li = document.createElement("li");
 
         const textWrap = document.createElement("span");
@@ -158,7 +179,7 @@
         swatch.style.background = COLORS[i % COLORS.length];
 
         const text = document.createElement("span");
-        text.textContent = name;
+        text.textContent = entry.name;
 
         textWrap.appendChild(swatch);
         textWrap.appendChild(text);
@@ -167,7 +188,7 @@
         removeBtn.className = "remove-name-btn";
         removeBtn.textContent = "✕";
         removeBtn.title = "Remove";
-        removeBtn.addEventListener("click", () => this.removeNameAt(i));
+        removeBtn.addEventListener("click", () => this.removeNameAt(entry.i));
 
         li.appendChild(textWrap);
         li.appendChild(removeBtn);
@@ -181,7 +202,7 @@
       const size = canvas.width;
       const center = size / 2;
       const radius = center - 6;
-      const names = this.state.names;
+      const names = this.getActiveEntries().map((e) => e.name);
 
       ctx.clearRect(0, 0, size, size);
       ctx.save();
@@ -247,8 +268,8 @@
 
     spin() {
       if (this.spinning) return;
-      const names = this.state.names;
-      if (names.length < 2) {
+      const entries = this.getActiveEntries();
+      if (entries.length < 2) {
         alert("Add at least 2 names to spin the wheel.");
         return;
       }
@@ -256,8 +277,8 @@
       this.spinning = true;
       this.spinBtn.disabled = true;
 
-      const sliceAngle = (Math.PI * 2) / names.length;
-      const winnerIndex = Math.floor(Math.random() * names.length);
+      const sliceAngle = (Math.PI * 2) / entries.length;
+      const winnerIndex = Math.floor(Math.random() * entries.length);
 
       // Pointer is at top (angle = -PI/2 in standard canvas coords, i.e. 270deg / -90deg).
       // We want the winning slice's center to end up pointing at the top after rotation.
@@ -295,25 +316,26 @@
         } else {
           this.rotation = endRotation % (Math.PI * 2);
           this.drawWheel();
-          this.onSpinComplete(names[winnerIndex], winnerIndex);
+          this.onSpinComplete(entries[winnerIndex]);
         }
       };
 
       requestAnimationFrame(animate);
     }
 
-    onSpinComplete(winnerName, winnerIndex) {
+    onSpinComplete(winnerEntry) {
       this.spinning = false;
       this.spinBtn.disabled = false;
 
       if (this.state.removeWinner) {
-        this.state.names.splice(winnerIndex, 1);
-        this.persist();
+        // Session-only: not persisted, so the full saved roster is back
+        // (winner included) the next time the page loads.
+        this.sessionRemovedIndices.add(winnerEntry.i);
         this.renderNameList();
         this.drawWheel();
       }
 
-      showWinner(winnerName);
+      showWinner(winnerEntry.name);
     }
   }
 
